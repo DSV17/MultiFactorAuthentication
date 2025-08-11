@@ -1,0 +1,33 @@
+{
+  "name": "multifactorauthentication",
+  "version": "1.0.0",
+  "description": "API de sistema de login com autenticação MFA",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx ts-node-dev --transpile-only --no-notify server.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "prisma": {
+    "schema": "src/models/schema.prisma"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^6.13.0",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "otplib": "^12.0.1",
+    "zod": "^4.0.17"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.2.1",
+    "prisma": "^6.13.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
