@@ -1,8 +1,10 @@
 import express from 'express';
 import configDotenv from './src/config/dotenv';
 import cors from 'cors';
+import configAuth from './src/config/auth.config';
 
 configDotenv();
+configAuth();
 
 const app = express();
 const port = process.env.PORT;
