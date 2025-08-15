@@ -1,7 +1,7 @@
 import express from 'express';
 import configDotenv from './src/config/dotenv';
 import cors from 'cors';
-import configAuth from './src/config/auth.config';
+import configAuth from './src/config/authConfig';
 
 configDotenv();
 configAuth();
