@@ -2,6 +2,8 @@ import { PrismaClient, Prisma } from "@prisma/client";
 import { Response, Request } from "express";
 import bcrypt from 'bcryptjs';
 import { generateJWT } from "../services/authService";
+import { createTempSession, validateTempSession } from "../services/tempSessionLoginService";
+import { verifyMfaCode } from "../services/mfaService";
 
 const prisma = new PrismaClient();
 
@@ -89,7 +91,53 @@ class UserController
         if(!isLogged)
             return response.status(401).json({ message: "Login ou senha incorretos." });
 
+        if(user.mfaEnabled)
+        {
+            const timeSession = Number(process.env.TIME_SESSION_MFA_MINUTES);
+            const {tempSession, token} = await createTempSession(user.id, timeSession);
+
+            return response.status(201).json({
+                message:"Codigo MFA necessario",
+                data:{mfaRequired: true, token: token, sessionId:tempSession.id}
+            })
+        }
+
         const tokenJWT = generateJWT(user);
+
+        return response.status(201).json({
+            message:"Login efetuado com sucesso", 
+            data:{email:user.email, token:tokenJWT}
+        })
+    }
+
+    async verifyMfaLogin(request:Request, response:Response)
+    {
+        const { code, sessionId, userId } = request.body;
+
+        const user = await prisma.user.findUnique({where: { id: userId }});
+        if(!user)
+            return response.status(404).json({ message: "Usuário não encontrado." });
+
+        const isValidSession = await validateTempSession(userId, sessionId);
+
+        if(!isValidSession){
+            return response.status(401).json({
+                message:"Sessão expirada ou inválida", 
+                success: false
+            })
+        }
+
+        const isValidCode = await verifyMfaCode(userId, code);
+        if(!isValidCode) {
+            return response.status(400).json({
+                success: false,
+                message: 'Código MFA inválido',
+            });
+        }
+
+        const tokenJWT = generateJWT(user);
+
+        await prisma.tempLoginSession.delete({where:{id:sessionId}});
 
         return response.status(201).json({
             message:"Login efetuado com sucesso", 

@@ -10,5 +10,6 @@ router.get("/user/read",Auth, userController.read);
 router.delete("/user/delete", Auth, userController.destroy);
 router.put("/user/changePassword", Auth, userValidator("changePassword"), userController.changePassword);
 router.post("/user/login", userValidator("login"), userController.login);
+router.post("/user/MfaLogin", userValidator("MfaLogin"), userController.verifyMfaLogin);
 
 export default router;

@@ -8,14 +8,15 @@ export const createTempSession = async (userId: string, expiresInMinutes: number
   const token = crypto.randomBytes(32).toString('hex');
   const hashedToken = await bcrypt.hash(token, 10);
   const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
-
-  return prisma.tempLoginSession.create({
+  const tempSession = await prisma.tempLoginSession.create({
     data: {
       userId,
       hashedToken,
       expiresAt,
     },
   });
+
+  return {tempSession, token};
 };
 
 export const validateTempSession = async (userId: string, token: string) => {
