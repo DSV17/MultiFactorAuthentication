@@ -2,8 +2,9 @@ import { PrismaClient, Prisma } from "@prisma/client";
 import { Response, Request } from "express";
 import bcrypt from 'bcryptjs';
 import { generateJWT } from "../services/authService";
-import { createTempSession, validateTempSession } from "../services/tempSessionLoginService";
+import { createTempSessionAndToken, validateTempSession } from "../services/tempSessionLoginService";
 import { verifyMfaCode } from "../services/mfaService";
+import { generateMfaSecret } from "../services/mfaService";
 
 const prisma = new PrismaClient();
 
@@ -94,11 +95,11 @@ class UserController
         if(user.mfaEnabled)
         {
             const timeSession = Number(process.env.TIME_SESSION_MFA_MINUTES);
-            const {tempSession, token} = await createTempSession(user.id, timeSession);
+            const token = await createTempSessionAndToken(user.id, timeSession);
 
             return response.status(201).json({
                 message:"Codigo MFA necessario",
-                data:{mfaRequired: true, token: token, sessionId:tempSession.id}
+                data:{mfaRequired: true, token: token, userId:user.id}
             })
         }
 
@@ -106,19 +107,19 @@ class UserController
 
         return response.status(201).json({
             message:"Login efetuado com sucesso", 
-            data:{email:user.email, token:tokenJWT}
+            data:{mfaRequired: false, email:user.email, token:tokenJWT}
         })
     }
 
     async verifyMfaLogin(request:Request, response:Response)
     {
-        const { code, sessionId, userId } = request.body;
+        const { code, token, userId } = request.body;
 
         const user = await prisma.user.findUnique({where: { id: userId }});
         if(!user)
             return response.status(404).json({ message: "Usuário não encontrado." });
 
-        const isValidSession = await validateTempSession(userId, sessionId);
+        const isValidSession = await validateTempSession(userId, token);
 
         if(!isValidSession){
             return response.status(401).json({
@@ -137,7 +138,7 @@ class UserController
 
         const tokenJWT = generateJWT(user);
 
-        await prisma.tempLoginSession.delete({where:{id:sessionId}});
+        await prisma.tempLoginSession.delete({where:{userId:userId}});
 
         return response.status(201).json({
             message:"Login efetuado com sucesso", 

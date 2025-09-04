@@ -4,11 +4,11 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-export const createTempSession = async (userId: string, expiresInMinutes: number = 5) => {
+export const createTempSessionAndToken = async (userId: string, expiresInMinutes: number = 5) => {
   const token = crypto.randomBytes(32).toString('hex');
   const hashedToken = await bcrypt.hash(token, 10);
   const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
-  const tempSession = await prisma.tempLoginSession.create({
+  await prisma.tempLoginSession.create({
     data: {
       userId,
       hashedToken,
@@ -16,7 +16,7 @@ export const createTempSession = async (userId: string, expiresInMinutes: number
     },
   });
 
-  return {tempSession, token};
+  return token;
 };
 
 export const validateTempSession = async (userId: string, token: string) => {
