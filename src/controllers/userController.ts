@@ -169,6 +169,108 @@ class UserController
         }
         catch(error) {return response.status(500).json({ error: error })}
     }
+
+    async setupMfa(request:Request, response:Response)
+    {
+        try
+        {
+            const userId = String(request.user)
+            const user = await prisma.user.findUnique({where: { id: userId }})
+            if(!user)
+                return response.status(404).json({ message: "Usuário não encontrado." });
+
+            const {secret, otpauthUrl} = generateMfaSecret(user.email);
+
+            await prisma.user.update({where:{id:userId}, data:{mfaSecret:secret}});
+
+            return response.status(201).json({
+                message:"MFA configurado com sucesso", 
+                data:{otpauthUrl:otpauthUrl, secret:secret}
+            })
+        }
+        catch(error) {return response.status(500).json({ error: error })}
+    }
+
+    async confirmMfa(request:Request, response:Response)
+    {
+        try
+        {
+            const userId = String(request.user)
+            const user = await prisma.user.findUnique({where: { id: userId }})
+            if(!user)
+                return response.status(404).json({ message: "Usuário não encontrado." });
+
+            const {code} = request.body;
+
+            if(!user.mfaSecret)
+            {
+                return response.status(400).json({
+                    success: false,
+                    message: 'Configure o MFA primeiro',
+                });
+            }
+
+            const isValidCode = await verifyMfaCode(userId, code);
+            if(!isValidCode) {
+                return response.status(400).json({
+                    success: false,
+                    message: 'Código MFA inválido',
+                });
+            }
+
+            await prisma.user.update({where:{id:user.id}, data:{mfaEnabled:true}})
+
+            return response.status(201).json({
+                message:"MFA ativado com sucesso!", 
+                success: true
+            })
+        }
+        catch(error) {return response.status(500).json({ error: error })}
+    }
+
+    async disableMfa(request:Request, response:Response)
+    {
+        try
+        {
+            const userId = String(request.user)
+            const user = await prisma.user.findUnique({where: { id: userId }})
+            if(!user)
+                return response.status(404).json({ message: "Usuário não encontrado." });
+
+            const {password, code} = request.body;
+
+            if(!user.mfaSecret)
+            {
+                return response.status(400).json({
+                    success: false,
+                    message: 'MFA já está desativado',
+                });
+            }
+
+            const isLogged = await bcrypt.compare(password, user.hashedPassword);
+            if(!isLogged)
+                return response.status(401).json({ message: "Senha incorreta." });
+
+            if(user.mfaEnabled)
+            {
+                const isValidCode = await verifyMfaCode(userId, code);
+                if(!isValidCode) {
+                    return response.status(400).json({
+                        success: false,
+                        message: 'Código MFA inválido',
+                    });
+                }
+            }
+
+            await prisma.user.update({where:{id:user.id}, data:{mfaEnabled:false}})
+
+            return response.status(201).json({
+                message:"MFA ativado com sucesso!", 
+                success: true
+            })
+        }
+        catch(error) {return response.status(500).json({ error: error })}
+    }
 }
 
 export default new UserController();

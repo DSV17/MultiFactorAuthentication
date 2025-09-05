@@ -13,6 +13,12 @@ export function userValidator(method: string)
         case "login":
             return [UserValidation.validateEmail(), UserValidation.validatePassword()];
 
+        case "confirmMfa":
+            return [UserValidation.validateCodeMFA()];
+
+        case "disableMfa":
+            return [UserValidation.validatePassword(), UserValidation.validateCodeMFA()];
+
         default:
             return [];
     }

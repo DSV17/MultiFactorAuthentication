@@ -38,7 +38,13 @@ class UserValidation
             .isString().withMessage("Precisa ser um texto")
             .isHexadecimal().withMessage("Precisa ser um numero hexadecimal")
             .isLength({ min: 64, max:64 }).withMessage("Precisa ter 64 caracteres/digitos")
+    }
 
+    public validateCodeMFA(): ValidationChain{
+        return body("code").exists().withMessage("Precisa ter o campo code")
+            .isString().withMessage("Precisa ser um texto")
+            .isNumeric().withMessage("Precisa ser um numero")
+            .isLength({ min: 6, max:6 }).withMessage("Precisa ter 6 digitos")
     }
 }
 
