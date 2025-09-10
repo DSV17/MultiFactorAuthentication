@@ -265,7 +265,7 @@ class UserController
             await prisma.user.update({where:{id:user.id}, data:{mfaEnabled:false}})
 
             return response.status(201).json({
-                message:"MFA ativado com sucesso!", 
+                message:"MFA desativado com sucesso!", 
                 success: true
             })
         }

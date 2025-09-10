@@ -25,7 +25,8 @@ export const validateTempSession = async (userId: string, token: string) => {
   });
 
   if(!session) return false;
-  const isSession = await bcrypt.compare(token, session.hashedToken);
+  const isSession = (await bcrypt.compare(token, session.hashedToken)) && 
+                    (new Date() < session.expiresAt)
 
   return isSession;
 };
