@@ -46,6 +46,13 @@ class UserValidation
             .isNumeric().withMessage("Precisa ser um numero")
             .isLength({ min: 6, max:6 }).withMessage("Precisa ter 6 digitos")
     }
+
+    public validateBackupCodeMFA(): ValidationChain{
+        return body("backupCode").exists().withMessage("Precisa ter o campo backupCode")
+            .isString().withMessage("Precisa ser um texto")
+            .isHexadecimal().withMessage("Precisa ser um hexadecimal")
+            .isLength({ min: 12, max:12 }).withMessage("Precisa ter 12 digitos")
+    }
 }
 
 export default new UserValidation();

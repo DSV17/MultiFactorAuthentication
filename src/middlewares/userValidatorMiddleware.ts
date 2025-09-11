@@ -19,6 +19,9 @@ export function userValidator(method: string)
         case "disableMfa":
             return [UserValidation.validatePassword(), UserValidation.validateCodeMFA()];
 
+        case "resetMfa":
+            return [UserValidation.validateBackupCodeMFA()];
+
         default:
             return [];
     }

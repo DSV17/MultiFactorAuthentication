@@ -19,5 +19,6 @@ router.post("/user/MfaLogin", userValidator("MfaLogin"), userController.verifyMf
 router.get("/user/setupMfa", Auth, userValidator("setupMfa"), userController.setupMfa);
 router.post("/user/confirmMfa", Auth, userValidator("confirmMfa"), userController.confirmMfa);
 router.post("/user/disableMfa", Auth, userValidator("disableMfa"), userController.disableMfa);
+router.post("/user/resetMfa", Auth, userValidator("resetMfa"), userController.resetMfa);
 
 export default router;

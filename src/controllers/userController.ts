@@ -3,7 +3,7 @@ import { Response, Request } from "express";
 import bcrypt from 'bcryptjs';
 import { generateJWT } from "../services/authService";
 import { createTempSessionAndToken, validateTempSession } from "../services/tempSessionLoginService";
-import { verifyMfaCode } from "../services/mfaService";
+import { verifyMfaCode, generateBackupCodes, hashBackupCodes } from "../services/mfaService";
 import { generateMfaSecret } from "../services/mfaService";
 
 const prisma = new PrismaClient();
@@ -179,13 +179,20 @@ class UserController
             if(!user)
                 return response.status(404).json({ message: "Usuário não encontrado." });
 
+            const backupCodes = generateBackupCodes();
+            const hashedBackupCodes = await hashBackupCodes(backupCodes);
+
             const {secret, otpauthUrl} = generateMfaSecret(user.email);
 
-            await prisma.user.update({where:{id:userId}, data:{mfaSecret:secret}});
+            await prisma.user.update({where:{id:userId}, 
+                data:{
+                    mfaSecret:secret,
+                    mfaBackupCodes: hashedBackupCodes,
+                    backupCodesGeneratedAt: new Date()}});
 
             return response.status(201).json({
                 message:"MFA configurado com sucesso", 
-                data:{otpauthUrl:otpauthUrl, secret:secret}
+                data:{otpauthUrl:otpauthUrl, secret:secret, backupCodes:backupCodes}
             })
         }
         catch(error) {return response.status(500).json({ error: error })}
@@ -267,6 +274,70 @@ class UserController
             return response.status(201).json({
                 message:"MFA desativado com sucesso!", 
                 success: true
+            })
+        }
+        catch(error) {return response.status(500).json({ error: error })}
+    }
+
+    async resetMfa(request:Request, response:Response)
+    {
+        try
+        {
+            const userId = String(request.user)
+            const user = await prisma.user.findUnique({where: { id: userId },
+                select: { mfaBackupCodes: true, email: true }})
+            if(!user)
+                return response.status(404).json({ message: "Usuário não encontrado." });
+
+            const {backupCode} = request.body;
+
+            if(!user.mfaBackupCodes || user.mfaBackupCodes.length === 0)
+            {
+                return response.status(400).json({
+                    success: false,
+                    message: 'Nenhum código de backup disponível',
+                });
+            }
+
+            let isValidBackupCode = false;
+            let updatedBackupCodes = [...user.mfaBackupCodes];
+
+            for (let i = 0; i < user.mfaBackupCodes.length; i++) {
+                const isMatch = await bcrypt.compare(backupCode, user.mfaBackupCodes[i]);
+                if (isMatch) {
+                    isValidBackupCode = true;
+                    updatedBackupCodes.splice(i, 1);
+                    break;
+                }
+            }
+
+            if (!isValidBackupCode) {
+                return response.status(401).json({
+                    success: false,
+                    message: 'Código de backup inválido ou já utilizado',
+                });
+            }
+
+            const {secret, otpauthUrl} = generateMfaSecret(user.email);
+
+            const newBackupCodes = generateBackupCodes();
+            const hashedNewCodes = await hashBackupCodes(newBackupCodes);
+
+            await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    mfaSecret: secret,
+                    mfaEnabled: false,
+                    mfaBackupCodes: [...updatedBackupCodes, ...hashedNewCodes],
+                    backupCodesGeneratedAt: new Date(),
+                },
+            });
+
+            return response.status(201).json({
+                message:"MFA resetado com sucesso!", 
+                success: true,
+                backupCodes: newBackupCodes,
+                otpauthUrl:otpauthUrl
             })
         }
         catch(error) {return response.status(500).json({ error: error })}
