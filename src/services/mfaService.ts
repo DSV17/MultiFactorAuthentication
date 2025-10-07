@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient();
 
 export const generateMfaSecret = (email: string) => {
     const secret = authenticator.generateSecret();
@@ -11,7 +11,7 @@ export const generateMfaSecret = (email: string) => {
     return { secret, otpauthUrl };
 };
 
-export const verifyMfaCode = async (userId: string, code: string) => {
+export const verifyMfaCode = async (prisma: PrismaClient,userId: string, code: string) => {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user?.mfaSecret) throw new Error('MFA não configurado');
     return authenticator.verify({ token: code, secret: user.mfaSecret });

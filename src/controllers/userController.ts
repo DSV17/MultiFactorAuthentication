@@ -150,7 +150,7 @@ class UserController
                 })
             }
 
-            const isValidCode = await verifyMfaCode(userId, code);
+            const isValidCode = await verifyMfaCode(prisma, userId, code);
             if(!isValidCode) {
                 return response.status(400).json({
                     success: false,
@@ -217,7 +217,7 @@ class UserController
                 });
             }
 
-            const isValidCode = await verifyMfaCode(userId, code);
+            const isValidCode = await verifyMfaCode(prisma, userId, code);
             if(!isValidCode) {
                 return response.status(400).json({
                     success: false,
@@ -260,7 +260,7 @@ class UserController
 
             if(user.mfaEnabled)
             {
-                const isValidCode = await verifyMfaCode(userId, code);
+                const isValidCode = await verifyMfaCode(prisma, userId, code);
                 if(!isValidCode) {
                     return response.status(400).json({
                         success: false,
