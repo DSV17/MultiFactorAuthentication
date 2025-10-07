@@ -113,7 +113,7 @@ class UserController
             if(user.mfaEnabled)
             {
                 const timeSession = Number(process.env.TIME_SESSION_MFA_MINUTES);
-                const token = await createTempSessionAndToken(user.id, timeSession);
+                const token = await createTempSessionAndToken(prisma, user.id, timeSession);
 
                 return response.status(201).json({
                     message:"Codigo MFA necessario",
@@ -141,7 +141,7 @@ class UserController
             if(!user)
                 return response.status(404).json({ message: "Usuário não encontrado." });
 
-            const isValidSession = await validateTempSession(userId, token);
+            const isValidSession = await validateTempSession(prisma, userId, token);
 
             if(!isValidSession){
                 return response.status(401).json({
