@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npx ts-node-dev --transpile-only --no-notify server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest --passWithNoTests",
     "keys": "npx ts-node src/config/generateRSAKeyPair.ts"
   },
   "prisma": {
