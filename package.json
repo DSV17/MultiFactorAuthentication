@@ -6,6 +6,8 @@
   "scripts": {
     "start": "npx ts-node-dev --transpile-only --no-notify server.ts",
     "test": "jest --passWithNoTests",
+    "test:unit": "jest --testPathPattern=\"tests/.*\\Unit\\Test\\.ts$\"",
+    "test:integration": "jest --testPathPattern=\"tests/.*\\Integration\\Test\\.ts$\"",
     "keys": "npx ts-node src/config/generateRSAKeyPair.ts"
   },
   "prisma": {
